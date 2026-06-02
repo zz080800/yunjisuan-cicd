@@ -1,0 +1,18 @@
+FROM swr.cn-north-4.myhuaweicloud.com/yunjisuanpro/pyspark:v9
+
+USER root
+
+# 删除原有预设脚本
+RUN rm -f /opt/spark/work-dir/analyze.py /opt/spark/work-dir/clean.py /opt/spark/work-dir/benchmark.py
+
+# 复制所有脚本和数据
+COPY douban_analysis.py /opt/spark/work-dir/douban_analysis.py
+COPY douban_movies.csv /opt/spark/work-dir/douban_movies.csv
+COPY benchmark.py /opt/spark/work-dir/benchmark.py
+
+RUN chmod +x /opt/spark/work-dir/*.py
+
+USER spark
+WORKDIR /opt/spark/work-dir
+
+CMD ["python3", "douban_analysis.py"]

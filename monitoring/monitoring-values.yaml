@@ -1,0 +1,76 @@
+grafana:
+  enabled: true
+  adminPassword: "admin123456"
+  service:
+    type: LoadBalancer
+  image:
+    registry: swr.cn-north-4.myhuaweicloud.com
+    repository: yunjisuanpro/grafana
+    tag: "12.4.3"
+  sidecar:
+    image:
+      registry: swr.cn-north-4.myhuaweicloud.com
+      repository: yunjisuanpro/k8s-sidecar
+      tag: "2.6.0"
+
+prometheus:
+  enabled: true
+  service:
+    type: ClusterIP
+  prometheusSpec:
+    retention: 7d
+    image:
+      registry: swr.cn-north-4.myhuaweicloud.com
+      repository: yunjisuanpro/prometheus
+      tag: "v3.11.2"
+  thanosService:
+    enabled: false
+  thanosServiceExternal:
+    enabled: false
+
+alertmanager:
+  enabled: true
+  alertmanagerSpec:
+    image:
+      registry: swr.cn-north-4.myhuaweicloud.com
+      repository: yunjisuanpro/alertmanager
+      tag: "v0.32.0"
+
+prometheusOperator:
+  image:
+    registry: swr.cn-north-4.myhuaweicloud.com
+    repository: yunjisuanpro/prometheus-operator
+    tag: "v0.90.1"
+  prometheusDefaultBaseImage: yunjisuanpro/prometheus
+  prometheusDefaultBaseImageRegistry: swr.cn-north-4.myhuaweicloud.com
+  admissionWebhooks:
+    patch:
+      image:
+        registry: swr.cn-north-4.myhuaweicloud.com
+        repository: yunjisuanpro/kube-webhook-certgen
+        tag: "1.8.1"
+  prometheusConfigReloader:
+    image:
+      registry: swr.cn-north-4.myhuaweicloud.com
+      repository: yunjisuanpro/prometheus-config-reloader
+      tag: "v0.90.1"
+
+kubeStateMetrics:
+  enabled: false
+
+kube-state-metrics:
+  image:
+    registry: swr.cn-north-4.myhuaweicloud.com
+    repository: yunjisuanpro/kube-state-metrics
+    tag: "v2.18.0"
+  imagePullSecrets: []
+
+prometheus-node-exporter:
+  image:
+    registry: swr.cn-north-4.myhuaweicloud.com
+    repository: yunjisuanpro/node-exporter
+    tag: "v1.11.1"
+
+global:
+  imagePullSecrets:
+    - name: swr-secret
