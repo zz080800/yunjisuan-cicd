@@ -1,0 +1,61 @@
+name: CI/CD Backend
+
+on:
+  push:
+    branches: [ "master" ]    # 注意：你的分支是 master，不是 main
+    paths:
+      - 'backend/**'
+      - '.github/workflows/ci-cd-backend.yml'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Huawei SWR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.SWR_SERVER }}
+          username: ${{ secrets.HUAWEI_AK }}
+          password: ${{ secrets.HUAWEI_SK }}
+
+      - name: Generate image tag (timestamp)
+        id: tag
+        run: echo "tag=$(date +'v%Y%m%d-%H%M%S')" >> $GITHUB_OUTPUT
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile.backend
+          push: true
+          tags: |
+            ${{ secrets.SWR_SERVER }}/${{ secrets.SWR_ORG }}/backend:${{ steps.tag.outputs.tag }}
+            ${{ secrets.SWR_SERVER }}/${{ secrets.SWR_ORG }}/backend:latest
+          provenance: false
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'v1.27.0'
+
+      - name: Configure kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" > $HOME/.kube/config
+          kubectl config use-context external 2>/dev/null || true
+
+      - name: Update deployment image
+        run: |
+          kubectl set image deployment/backend backend=${{ secrets.SWR_SERVER }}/${{ secrets.SWR_ORG }}/backend:${{ steps.tag.outputs.tag }} -n default
+          kubectl rollout status deployment/backend -n default --timeout=3m
+
+      - name: Verify rollout
+        run: |
+          kubectl get pods -n default -l app=backend
+          kubectl get deployment backend -n default -o jsonpath='{.spec.template.spec.containers[0].image}'
