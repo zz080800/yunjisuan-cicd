@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pandas-test
+spec:
+  containers:
+  - name: pandas
+    image: swr.cn-north-4.myhuaweicloud.com/yunjisuanpro/pyspark-douban:v11
+    command: ["python3", "/opt/spark/work-dir/benchmark.py", "pandas"]
+    resources:
+      requests:
+        cpu: "500m"      # 与 Spark executor 一致
+        memory: "512Mi"  # 与 Spark executor 一致
+      limits:
+        cpu: "500m"
+        memory: "512Mi"
+  restartPolicy: Never
